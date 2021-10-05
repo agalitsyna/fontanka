@@ -13,7 +13,7 @@ def test_call_fountains_cli(request, tmpdir):
 
     regions_file = op.join(tmpdir, "regions.txt")
     with open(regions_file, "w") as f:
-        f.write("chrom\tstart\tend\nchr2\t0\t242193529\nchr17\t0\t83257441")
+        f.write("chr2\t0\t242193529\nchr17\t0\t83257441")
 
     runner = CliRunner()
     result = runner.invoke(

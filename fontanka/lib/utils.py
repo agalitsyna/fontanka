@@ -49,28 +49,31 @@ FILTER_SCHARR = np.array(
 #######################
 ### Tools for snip-based convolution:
 #######################
-def generate_ObsExpSnips(clr, windows, regions, nthreads=10):
+def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
     """
     Generate observed over expected snips for the cool file.
     :param clr: input cooler, already parsed
     :param windows: input windows
-    :param regions: regions table (pandas dataframe, will be replaced with viewframe in the future)
+    :param regions: regions table, will be replaced with viewframe in the future.
+    :param expected: expected table, pandas dataframe
     :param nthreads: number of threads
     :return: stack, numpy array
     """
-    logger.info("Generating expected...")
     # Calculate expected interactions for chromosome arms
-    with multiprocess.Pool(nthreads) as pool:
-        expected = cooltools.expected.diagsum(
-            clr,
-            regions=regions,
-            transforms={"balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]},
-            map=pool.map,
-        )
-    expected = pd.concat(
-        [expected, bioframe.region.parse_regions(expected.region)], axis=1
-    ).drop("name", axis=1)
-    expected["balanced.avg"] = expected["balanced.sum"] / expected["n_valid"]
+    if expected is None:
+        logger.info("Generating expected...")
+        with multiprocess.Pool(nthreads) as pool:
+            expected = cooltools.expected.diagsum(
+                clr,
+                regions=regions,
+                transforms={"balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]},
+                map=pool.map,
+            )
+        expected = pd.concat(
+            [expected, bioframe.region.parse_regions(expected.region)], axis=1
+        ).drop("name", axis=1)
+        expected["balanced.avg"] = expected["balanced.sum"] / expected["n_valid"]
+
 
     logger.info("Generating stack of snips...")
     snipper = cooltools.snipping.ObsExpSnipper(clr, expected, regions=regions)
