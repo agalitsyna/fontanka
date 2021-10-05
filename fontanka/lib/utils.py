@@ -17,10 +17,12 @@ import proplot
 
 # Ignore warnings
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # Manage logging
 from . import get_logger
+
 logger = get_logger(__name__)
 
 # Import libraries for Hi-C data analysis

@@ -1,6 +1,8 @@
 # Based on ipython traitlets
 import logging
+
 _loggers = {}
+
 
 def get_logger(name="fontanka"):
     global _loggers

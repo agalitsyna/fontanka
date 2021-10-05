@@ -118,9 +118,9 @@ for size, flank_bp, resolution in [
             scharr_track_box = generate_scharr_score(stack)
 
             # Write the result, note that bad bins are not filtered out:
-            metadata = bins[['chrom', 'start', 'end']].copy()
-            metadata.loc[:, 'window_start'] = windows['start']
-            metadata.loc[:, 'window_end'] = windows['end']
+            metadata = bins[["chrom", "start", "end"]].copy()
+            metadata.loc[:, "window_start"] = windows["start"]
+            metadata.loc[:, "window_end"] = windows["end"]
             # Fountain Score (FS) is an average OEE in the fountain divided by average OOE outside of it:
             metadata["FS"] = fs_track
             # Fountain peaks are the prominences of peaks:

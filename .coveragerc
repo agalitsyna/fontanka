@@ -1,0 +1,12 @@
+[run]
+source=
+    fontanka/
+
+omit=
+    fontanka/__main__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    return NotImplemented
+    raise NotImplementedError

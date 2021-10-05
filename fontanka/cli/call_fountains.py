@@ -11,7 +11,9 @@ from ..lib import *
 
 # Set up logging:
 from . import get_logger
+
 logger = get_logger(__name__)
+
 
 @cli.command()
 @click_log.simple_verbosity_option(logger)
@@ -54,7 +56,6 @@ logger = get_logger(__name__)
     type=str,
     default=None,
 )
-
 def call_fountains(
     cool_path, output_path, regions, window_size, angle, snips, nthreads, store_snips
 ):
@@ -69,10 +70,12 @@ fountain angle:{angle}, window size: {window_size}"""
     bins = clr.bins()[:]
     resolution_bp = clr.binsize
 
-    assert window_size%resolution_bp==0, "Window size should be divisible by resolution"
+    assert (
+        window_size % resolution_bp == 0
+    ), "Window size should be divisible by resolution"
 
     # load chromosome regions
-    chroms_regions = pd.read_csv(regions)
+    chroms_regions = pd.read_table(regions)
     chroms_regions.loc[:, "name"] = chroms_regions.apply(
         lambda x: f"{x.chrom}:{x.start}-{x.end}", axis=1
     )
@@ -98,14 +101,20 @@ fountain angle:{angle}, window size: {window_size}"""
 
     # Create fountain masks
     # First, calculate the number positive and negative values for normalization:
-    n_pos = double_triangle_mask(angle, window_size//resolution_bp, fill_pos=1, fill_neg=0).sum()
-    n_neg = double_triangle_mask(angle, window_size//resolution_bp, fill_pos=0, fill_neg=1).sum()
+    n_pos = double_triangle_mask(
+        angle, window_size // resolution_bp, fill_pos=1, fill_neg=0
+    ).sum()
+    n_neg = double_triangle_mask(
+        angle, window_size // resolution_bp, fill_pos=0, fill_neg=1
+    ).sum()
     # All positive values balance out negative values, mask sums up to 0:
     mask_norm = double_triangle_mask(
-        angle, window_size//resolution_bp, fill_pos=1 / n_pos, fill_neg=-1 / n_neg
+        angle, window_size // resolution_bp, fill_pos=1 / n_pos, fill_neg=-1 / n_neg
     )
     # Mask sums up to 1:
-    mask_pos = double_triangle_mask(angle, window_size//resolution_bp, fill_pos=1 / n_pos, fill_neg=0)
+    mask_pos = double_triangle_mask(
+        angle, window_size // resolution_bp, fill_pos=1 / n_pos, fill_neg=0
+    )
 
     # Create track with metadata:
     # Fountain score track:
@@ -116,9 +125,9 @@ fountain angle:{angle}, window size: {window_size}"""
     scharr_track_box = generate_scharr_score(stack)
 
     # Write the result, note that bad bins are not filtered out:
-    metadata = bins[['chrom', 'start', 'end']].copy()
-    metadata.loc[:, 'window_start'] = windows['start']
-    metadata.loc[:, 'window_end'] = windows['end']
+    metadata = bins[["chrom", "start", "end"]].copy()
+    metadata.loc[:, "window_start"] = windows["start"]
+    metadata.loc[:, "window_end"] = windows["end"]
     # Fountain Score (FS) is an average OEE in the fountain divided by average OOE outside of it:
     metadata["FS"] = fs_track
     # Fountain peaks are the prominences of peaks:

@@ -21,15 +21,28 @@ def get_version():
     return version
 
 
+def get_requirements(path):
+    content = _read(path)
+    return [
+        req
+        for req in content.split("\n")
+        if req != "" and not (req.startswith("#") or req.startswith("-"))
+    ]
+
+setup_requires = [
+    'cython',
+    'numpy',
+]
+install_requires = get_requirements("requirements.txt")
+
 setup(
     name="fontanka",
     version=get_version(),
     author="agalicina",
     license="MIT",
     py_modules=["fontanka"],
-    install_requires=[
-        "Click",
-    ],
+    setup_requires=setup_requires,
+    install_requires=install_requires,
     entry_points={
         "console_scripts": [
             "fontanka = fontanka.cli:cli",

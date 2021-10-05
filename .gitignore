@@ -1,0 +1,16 @@
+
+__pycache__
+fontanka/__pycache__
+fontanka/*/__pycache__
+
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+.pytest_cache

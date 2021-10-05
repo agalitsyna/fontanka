@@ -53,7 +53,7 @@ fontanka call-fountains test.mcool::resolutions/10000 \
    Rapid depletion of CTCF and cohesin proteins reveals dynamic features of chromosome architecture.
    </a>
 
-3. <a name="ref" href="https://doi.org/10.1038/s41467-020-19562-7">Matthey-Doret, C., Baudry, L., Breuer, A., Montagne, R., Guiglielmoni, N., Scolari, V., ... & Cournac, A. (2020). 
+3. <a name="ref3" href="https://doi.org/10.1038/s41467-020-19562-7">Matthey-Doret, C., Baudry, L., Breuer, A., Montagne, R., Guiglielmoni, N., Scolari, V., ... & Cournac, A. (2020). 
    Computer vision for pattern detection in chromosome contact maps. 
    Nature Communications, 11(1), 1-11.</a>
 

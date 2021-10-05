@@ -21,4 +21,3 @@ dependencies:
     - cooltools==0.4.1
     - multiprocess==0.70.12.2
     - scikit-learn==1.0
-# python -m ipykernel install --user --name fontanka --display-name "fontanka"
