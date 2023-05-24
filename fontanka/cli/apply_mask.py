@@ -4,6 +4,7 @@ from . import cli
 
 import pandas as pd
 import numpy as np
+import scipy
 
 import cooler
 from cooltools.api import snipping
@@ -31,10 +32,18 @@ logger = get_logger(__name__)
     type=int,
 )
 @click.option(
-    "--angle",
-    "-A",
-    help="Angle between the sides of the fountain. E.g., np.pi/4 is approximately 0.7854",
-    type=np.float32,
+    "--mask",
+    "-M",
+    help="npy object with stored mask",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--measure",
+    "-m",
+    help="Name of measure for calculating similarity",
+    type=str,
+    default="corr",
 )
 @click.option(
     "--snips",
@@ -62,13 +71,13 @@ logger = get_logger(__name__)
     type=str,
     default=None,
 )
-def call_fountains(
-    cool_path, output_path, regions, window_size, angle, snips, nthreads, store_snips, expected
+def apply_mask(
+    cool_path, output_path, regions, window_size, mask, snips, nthreads, store_snips, expected, measure
 ):
 
     logger.info(
-        f"""Running fountain calling for: {cool_path}, 
-fountain angle:{angle:.5f}, window size: {window_size}"""
+        f"""Running fountain calling for: {cool_path}, window size: {window_size}
+        mask location:{mask}"""
     )
 
     # load cooler
@@ -108,28 +117,12 @@ fountain angle:{angle:.5f}, window size: {window_size}"""
 
     logger.info(f"Finished generating stack, stack shape:{stack.shape} ")
 
-    # Create fountain masks
-    # First, calculate the number positive and negative values for normalization:
-    n_pos = double_triangle_mask(
-        angle, window_size // resolution_bp, fill_pos=1, fill_neg=0
-    ).sum()
-    n_neg = double_triangle_mask(
-        angle, window_size // resolution_bp, fill_pos=0, fill_neg=1
-    ).sum()
-    # All positive values balance out negative values, mask sums up to 0:
-    mask_norm = double_triangle_mask(
-        angle, window_size // resolution_bp, fill_pos=1 / n_pos, fill_neg=-1 / n_neg
-    )
-    # Mask sums up to 1:
-    mask_pos = double_triangle_mask(
-        angle, window_size // resolution_bp, fill_pos=1 / n_pos, fill_neg=0
-    )
+    # Read fountain mask:
+    mask = np.load(mask)
 
     # Create track with metadata:
-    # Fountain score track:
-    fs_track = generate_fountain_score(stack, kernel=mask_norm)
-    # Scharr score track (for fountain structure only):
-    scharr_track = generate_scharr_score(stack, kernel=mask_pos)
+    # Similarity track:
+    sim_track = generate_similarity_score(stack, mask, measure)
     # Scharr score track (for the whole window):
     scharr_track_box = generate_scharr_score(stack)
 
@@ -138,13 +131,11 @@ fountain angle:{angle:.5f}, window size: {window_size}"""
     metadata.loc[:, "window_start"] = windows["start"]
     metadata.loc[:, "window_end"] = windows["end"]
     # Fountain Score (FS) is an average OEE in the fountain divided by average OOE outside of it:
-    metadata["FS"] = fs_track
+    metadata["SIM"] = sim_track
     # Fountain peaks are the prominences of peaks:
-    metadata["FS_peaks"] = metadata.groupby("chrom")["FS"].transform(
+    metadata["SIM_peaks"] = metadata.groupby("chrom")["SIM"].transform(
         get_peaks_prominence
     )
-    # Average Scharr in the fountain:
-    metadata["Scharr"] = scharr_track
     # Average Scharr gor a box:
     metadata["Scharr_box"] = scharr_track_box
 

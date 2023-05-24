@@ -29,14 +29,14 @@ logger = get_logger(__name__)
 import cooler
 import bioframe
 import cooltools
-import cooltools.expected
-from cooltools import snipping
+import cooltools.api.expected
+from cooltools.api import snipping
 import cooltools.lib.plotting
 
 # Additional imports:
 from cooltools.lib._query import CSRSelector
 from cooltools.lib import peaks, numutils
-from cooltools.insulation import get_n_pixels
+from cooltools.api.insulation import get_n_pixels
 
 FILTER_SCHARR = np.array(
     [
@@ -63,9 +63,9 @@ def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
     if expected is None:
         logger.info("Generating expected...")
         with multiprocess.Pool(nthreads) as pool:
-            expected = cooltools.expected.diagsum(
+            expected = cooltools.api.expected.diagsum(
                 clr,
-                regions=regions,
+                view_df=regions,
                 transforms={"balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]},
                 map=pool.map,
             )
@@ -76,9 +76,9 @@ def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
 
 
     logger.info("Generating stack of snips...")
-    snipper = cooltools.snipping.ObsExpSnipper(clr, expected, regions=regions)
+    snipper = cooltools.api.snipping.ObsExpSnipper(clr, expected, view_df=regions)
     with multiprocess.Pool(nthreads) as pool:
-        stack = cooltools.snipping.pileup(
+        stack = cooltools.api.snipping._pileup(
             windows, snipper.select, snipper.snip, map=pool.map
         )
     return stack
@@ -125,6 +125,51 @@ def generate_fountain_score(stack, kernel):
         track_fs[i] = np.nanmean(fs)
     return track_fs
 
+def compare(mtx1, mtx2, measure):
+    if measure=="mult":
+        ret = np.nanmean(np.multiply(mtx1, mtx2))
+    elif measure=="corr":
+        v1 = mtx1.flatten()
+        v2 = mtx2.flatten()
+        valid = np.isfinite(v1) & np.isfinite(v2)
+        if np.sum(valid)>3:
+            ret = scipy.stats.pearsonr(v1[valid], v2[valid])[0]
+        else:
+            ret = np.nan
+    elif measure=="spearmanr":
+        v1 = mtx1.flatten()
+        v2 = mtx2.flatten()
+        valid = np.isfinite(v1) & np.isfinite(v2)
+        if np.sum(valid)>3:
+            ret = scipy.stats.pearsonr(v1[valid], v2[valid])[0]
+        else:
+            ret = np.nan
+    elif measure=="mse":
+        ret = np.nanmean(((mtx1.flatten() - mtx2.flatten()) ** 2))
+    else:
+        try:
+            ret = measure(mtx1, mtx2)
+        except Exception as e:
+            raise ValueError(f"Measure: {measure} is not defined.")
+    return ret
+
+def generate_similarity_score(stack, kernel, measure='corr'):
+    """
+    Generate fountain score for the stack.
+    :param stack: input stack (3D numpy array)
+    :param kernel: kernel (or mask, 2D numpy array) for convolution,
+                    size should correspond to the first two dimensions of stack
+    :param measure: measure for calculating the similarity, default: corr
+    :return: track with fountain score (numpy array)
+    """
+    logger.info(f"Generating fountain score...")
+    n_snips = stack.shape[2]
+    track_sim = np.ones(n_snips) * np.nan
+    for i in tqdm(range(n_snips)):
+        snip = stack[:, :, i]
+        sim = compare(kernel, snip, measure)
+        track_sim[i] = sim
+    return track_sim
 
 def generate_scharr_score(stack, kernel=None):
     """
@@ -214,8 +259,19 @@ def double_triangle_mask(alpha, size, fill_pos=1, fill_neg=0):
 ### Eigenvectors analysis of snips:
 #######################
 def _get_eig(snip, n_eigs):
+
     snip = snip.copy()
+    numutils.set_diag(snip, 0, 0)
     snip[np.isnan(snip)] = 0
+    # print(snip)
+    # snip = numutils.iterative_correction_symmetric(snip)[0]
+    marg = np.r_[np.sum(snip, axis=0), np.sum(snip, axis=1)]
+    marg = np.mean(marg[marg > 0])
+    snip /= marg
+    marg = np.r_[np.sum(snip, axis=0), np.sum(snip, axis=1)]
+    marg = np.mean(marg[marg > 0])
+    snip /= marg
+
     eigvecs, eigvals = numutils.get_eig(snip, n_eigs, mask_zero_rows=True)
     eigvecs /= np.sqrt(np.nansum(eigvecs ** 2, axis=1))[:, None]
     eigvecs *= np.sqrt(np.abs(eigvals))[:, None]
@@ -227,12 +283,16 @@ def _flip_eigs(eigs, vect):
     return (eigs.T * np.sign(vect)).T
 
 
+def reflect(mtx):
+    return np.nanmean( [mtx, np.rot90(mtx[:, ::-1])] , axis=0)
+
+
 def _get_components(stack, n_eigs):
     n_snips = stack.shape[2]
     snip_size = stack.shape[0]
     stack_eigvects = np.ones((n_eigs, snip_size, n_snips)) * np.nan
     for i in range(n_snips):
-        snip = stack[:, :, i]
+        snip = reflect(stack[:, :, i])
         snip[np.isnan(snip)] = 0
         if np.sum(snip) == 0:
             continue
@@ -242,7 +302,8 @@ def _get_components(stack, n_eigs):
             eigvecs *= np.sqrt(np.abs(eigvals))[:, None]
 
             stack_eigvects[:, :, i] = eigvecs[1:, :]
-        except Exception:
+        except Exception as e:
+            print(e)
             pass
     return stack_eigvects
 
@@ -263,7 +324,8 @@ def _flip_sign(eigvects, n_eigs, reference_eigvects):
                     for i in range(n_eigs)
                 ]
             )
-            stack_eigvects[:, :, i] = flip_eigs(eigs, vect)
-        except Exception:
+            stack_eigvects[:, :, i] = _flip_eigs(eigs, vect)
+        except Exception as e:
+            print(e)
             pass
     return stack_eigvects
