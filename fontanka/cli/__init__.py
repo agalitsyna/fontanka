@@ -32,4 +32,4 @@ def cli(profile: bool) -> None:
             atexit.register(exit)
 
 
-from . import call_fountains, apply_mask
+from . import call_fountain_binary_mask, call_mask

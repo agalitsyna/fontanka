@@ -1,5 +1,5 @@
 cython
-click>=7
+click>=8
 click_log
 matplotlib
 proplot
@@ -8,9 +8,9 @@ scipy
 seaborn
 tqdm
 numpy
-bioframe>=0.3.3
-cooler>=0.8.11
-cooltools>=0.4.1
+bioframe>=0.4.1
+cooler>=0.9.2
+cooltools>=0.5.4
 multiprocess
 pytest
 pytest-flake8

@@ -2,13 +2,12 @@
 
 Fontanka is a set of tools to work with fountains in Hi-C data. 
 
-Fountains are novel features of Hi-C maps also reported as "flares" [[1](#ref1)] 
-and "plumes" [[2](#ref2)]. They can be detected as inverted triangular structures along the main diagonal of Hi-C maps.
+Fountains are novel features of Hi-C maps, resembling "flares" [[1](#ref1)], "plumes" [[2](#ref2)] and "jets" [[3](#ref3)]. They can be detected as inverted triangular structures along the main diagonal of Hi-C maps.
 Fountains are also to "hairpins" [[3](#ref3)]. 
 
 Fontanka aims to provide a flexible Python API and specialized CLI for calling fountains from cool Hi-C files. 
 
-Although there is no specialized tool for calling fountains, Chromosight [[3](#ref3)] can be modified to do that. 
+Although there is no specialized tool for calling fountains, Chromosight [[4](#ref4)] can be modified to do that. 
 
 ## Installation
 
@@ -52,8 +51,11 @@ fontanka call-fountains test.mcool::resolutions/10000 \
 2. <a name="ref2" href="https://doi.org/10.1101/2021.08.27.457977">Liu, N. Q., Magnitov, M., Schijns, M., van Schaik, T., van der Weide, R. H., Teunissen, H., ... & de Wit, E. (2021). 
    Rapid depletion of CTCF and cohesin proteins reveals dynamic features of chromosome architecture.
    </a>
+   
+3. <a name="ref3" href="https://doi.org/10.1016/j.molcel.2022.09.003">Guo, Y., Al-Jibury, E., Garcia-Millan, R., Ntagiantas, K., King, J.W., Nash, A.J., Galjart, N., Lenhard, B., Rueckert, D., Fisher, A.G. and Pruessner, G., 2022. Chromatin jets define the properties of cohesin-driven in vivo loop extrusion. Molecular Cell, 82(20), pp.3769-3780.</a>
 
-3. <a name="ref3" href="https://doi.org/10.1038/s41467-020-19562-7">Matthey-Doret, C., Baudry, L., Breuer, A., Montagne, R., Guiglielmoni, N., Scolari, V., ... & Cournac, A. (2020). 
+
+4. <a name="ref4" href="https://doi.org/10.1038/s41467-020-19562-7">Matthey-Doret, C., Baudry, L., Breuer, A., Montagne, R., Guiglielmoni, N., Scolari, V., ... & Cournac, A. (2020). 
    Computer vision for pattern detection in chromosome contact maps. 
    Nature Communications, 11(1), 1-11.</a>
 

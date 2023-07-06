@@ -7,8 +7,8 @@ from tqdm import tqdm
 # Packages for data analysis
 import numpy as np
 import scipy
+import scipy.signal
 import pandas as pd
-from scipy import signal
 
 # Packages for plotting
 import matplotlib.pyplot as plt
@@ -17,7 +17,6 @@ import proplot
 
 # Ignore warnings
 import warnings
-
 warnings.filterwarnings("ignore")
 
 # Manage logging
@@ -29,14 +28,8 @@ logger = get_logger(__name__)
 import cooler
 import bioframe
 import cooltools
-import cooltools.api.expected
-from cooltools.api import snipping
+import cooltools.lib
 import cooltools.lib.plotting
-
-# Additional imports:
-from cooltools.lib._query import CSRSelector
-from cooltools.lib import peaks, numutils
-from cooltools.api.insulation import get_n_pixels
 
 FILTER_SCHARR = np.array(
     [
@@ -49,53 +42,6 @@ FILTER_SCHARR = np.array(
 #######################
 ### Tools for snip-based convolution:
 #######################
-def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
-    """
-    Generate observed over expected snips for the cool file.
-    :param clr: input cooler, already parsed
-    :param windows: input windows
-    :param regions: regions table, will be replaced with viewframe in the future.
-    :param expected: expected table, pandas dataframe
-    :param nthreads: number of threads
-    :return: stack, numpy array
-    """
-    # Calculate expected interactions for chromosome arms
-    if expected is None:
-        logger.info("Generating expected...")
-        with multiprocess.Pool(nthreads) as pool:
-            expected = cooltools.api.expected.diagsum(
-                clr,
-                view_df=regions,
-                transforms={"balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]},
-                map=pool.map,
-            )
-        expected = pd.concat(
-            [expected, bioframe.region.parse_regions(expected.region)], axis=1
-        ).drop("name", axis=1)
-        expected["balanced.avg"] = expected["balanced.sum"] / expected["n_valid"]
-
-
-    logger.info("Generating stack of snips...")
-    snipper = cooltools.api.snipping.ObsExpSnipper(clr, expected, view_df=regions)
-    with multiprocess.Pool(nthreads) as pool:
-        stack = cooltools.api.snipping._pileup(
-            windows, snipper.select, snipper.snip, map=pool.map
-        )
-    return stack
-
-
-def save_snips(stack, outfile):
-    """
-    Save stack of snips into the file.
-    :param stack: input stack (3D numpy array)
-    :param outfile: output file (will be in .npy format)
-    :return: None
-    """
-    logger.info(f"Saving stack into {outfile}...")
-    with open(outfile, "wb") as f:
-        np.save(f, stack)
-
-
 def read_snips(infile):
     """
     Read snips from the file.
@@ -103,12 +49,23 @@ def read_snips(infile):
     :return: output stack (3D numpy array)
     """
     logger.info(f"Reading stack from {infile}...")
-    with open(infile, "rb") as f:
-        stack = np.load(f)
+
+    stack = np.load(infile)
+
+    try: # Try to load the cooltools pileup output, assume NPZ format: 
+        stack = stack['stack']
+    except Exception as e:
+        pass
+
+    print(f"Stack dimensions: {stack.shape}")
+    if stack.shape[0]>stack.shape[2]:
+        print("Rotating the dimension of the stack to match the expected (window_size, window_size, n_bins)")
+        stack = stack.T
+
     return stack
 
 
-def generate_fountain_score(stack, kernel):
+def generate_binary_score(stack, kernel):
     """
     Generate fountain score for the stack.
     :param stack: input stack (3D numpy array)
@@ -187,7 +144,7 @@ def generate_scharr_score(stack, kernel=None):
         snip = stack[:, :, i].copy()
         if not kernel is None:
             snip = snip * kernel
-        grad = signal.convolve2d(snip, FILTER_SCHARR, boundary="symm", mode="same")
+        grad = scipy.signal.convolve2d(snip, FILTER_SCHARR, boundary="symm", mode="same")
         scharr = np.nanmax(np.absolute(grad))
         track_scharr[i] = scharr
     return track_scharr
@@ -197,7 +154,7 @@ def get_peaks_prominence(track):
     """Very simple wrapper to get the prominence of peaks (no filtering).
     Takes 1D numpy array as input."""
     logger.info(f"Finding peaks in track...")
-    poss, proms = peaks.find_peak_prominence(track)
+    poss, proms = cooltools.lib.peaks.find_peak_prominence(track)
     ins_prom_track = np.zeros_like(track) * np.nan
     ins_prom_track[poss] = proms
     return ins_prom_track
@@ -297,7 +254,7 @@ def _get_components(stack, n_eigs):
         if np.sum(snip) == 0:
             continue
         try:
-            eigvecs, eigvals = numutils.get_eig(snip, n_eigs + 1, mask_zero_rows=True)
+            eigvecs, eigvals = cooltools.lib.numutils.get_eig(snip, n_eigs + 1, mask_zero_rows=True)
             eigvecs /= np.sqrt(np.nansum(eigvecs ** 2, axis=1))[:, None]
             eigvecs *= np.sqrt(np.abs(eigvals))[:, None]
 
