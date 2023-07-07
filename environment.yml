@@ -19,7 +19,7 @@ dependencies:
   - pip:
     - numpy==1.23.5
     - bioframe==0.4.1
-    - cooler==0.8.11c
+    - cooler==0.8.11
     - cooltools==0.5.2
     - multiprocess==0.70.12.2
     - scikit-learn==1.0

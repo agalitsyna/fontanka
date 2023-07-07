@@ -212,7 +212,7 @@ def get_peaks_prominence(track):
 #######################
 ### Fountains analysis:
 #######################
-def inverted_trinagle_mask(alpha, h, fill_pos=1, fill_neg=0):
+def inverted_trinagle_mask(alpha, height, fill_pos=1, fill_neg=0, norm_sum=True):
     """
     Return square mask with a single fountain (from lower left to upper right).
     Note that obtuse angles cannot be used.
@@ -222,14 +222,17 @@ def inverted_trinagle_mask(alpha, h, fill_pos=1, fill_neg=0):
     :param fill_neg: values for negative regions of the mask
     :return: 2D numoy array with a mask. Resulting size will be 2*size + 1.
     """
-    mtx = np.zeros([h, h]) + fill_neg
-    for x in range(h):
-        bgn = np.trunc((x + 1) * np.tan((np.pi / 2 - alpha) / 2)).astype(int)
-        end = np.ceil((x + 0.5) / np.tan((np.pi / 2 - alpha) / 2)).astype(int)
-        bgn = bgn if bgn > 0 else 0
-        end = end if end < h else h
+    mtx = np.zeros([height, height])+fill_neg
+    for x in range(height):
+        bgn = np.trunc((x+1)*np.tan((np.pi/2-alpha)/2)).astype(int)
+        end = np.ceil((x+0.5)/np.tan((np.pi/2-alpha)/2)).astype(int)
+        bgn = bgn if bgn>0 else 0
+        end = end if end<height else height
         mtx[x, bgn:end] = fill_pos
-    return np.flip(mtx, axis=1).T
+    if norm_sum:
+        return np.flip( mtx/np.sum(mtx) , axis=1).T
+    else:
+        return np.flip( mtx , axis=1).T
 
 
 def double_triangle_mask(alpha, size, fill_pos=1, fill_neg=0):

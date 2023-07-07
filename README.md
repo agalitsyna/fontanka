@@ -5,7 +5,7 @@ Fountains are also similar to "hairpins" [[4](#ref4)].
 
 Fontanka aims to provide a flexible Python API and specialized CLI for calling fountains from cool Hi-C files. 
 
-Note that Chromosight [[4](#ref4)] can be modified to do fountains calling with fountain mask. 
+Note that Chromosight [[4](#ref4)] can be modified to do fountains calling with the binary fountain mask (see examples), although producing patterns with much sharper edges. 
 
 ## Installation
 
@@ -15,9 +15,10 @@ conda env create -f environment.yml
 conda activate fontanka
 ```
 
+Note that fontanka version 0.1 runs old versions of cooltools and bioframe, as specified in the requirements and environment file.
+
 Optionally, you may want to activate IPython kernel to work with API:
 ```bash
-conda install ipykernel
 python -m ipykernel install --user --name fontanka --display-name "fontanka"
  ```
 
@@ -29,19 +30,46 @@ pip install -e ./
 
 ## Example usage
 
-Call for the binary fountain mask:
+1. Calculate expected with cooltools (v0.5.2):
 
 ```bash
-fontanka call-fountains test.mcool::resolutions/10000 \
+cooltools expected-cis test.mcool::resolutions/10000 \
+    --regions test.viewframe.tsv \
+    -p 20 --clr-weight-name weight --ignore-diags 2 \
+    -o test.expected.tsv
+```
+
+2. Store whole-genome snippets of Hi-C maps: 
+```bash
+fontanka slice-windows test.mcool::resolutions/10000 \
+    output.200Kb.snips.npy \
+    -W 200_000 -p 20 \
+    --view test.viewframe.tsv --expected test.expected.tsv
+```
+
+3. Call for the binary fountain mask:
+```bash
+fontanka apply-binary-fountain-mask test.mcool::resolutions/10000 \
          output.fountains.tsv \
          -A 0.7854 \
          -W 200_000 \
          -p 20 \
-         --store-snips output.snips.fountains.npy \
+         --snips output.binary.fountains.npy \
          --regions chromosome.regions.txt 
 ```
 
-For running fontanka for Galitsyna et al. 2023, see the notebook in the "examples/".
+4. Call for custom mask: 
+```bash
+fontanka apply-fountain-mask test.mcool::resolutions/10000 \
+         output.fountains.tsv \
+         -M test.fountain.mask.npy  \
+         -W 200_000 \
+         -p 20 \
+         --snips output.mask.fountains.npy \
+         --regions chromosome.regions.txt 
+```
+
+For running fontanka as done in Galitsyna et al. 2023, see the notebook in the "examples/".
 
 ### References: 
 
