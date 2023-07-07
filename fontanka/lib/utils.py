@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import proplot
 
+plt.rcParams["axes.grid"] = False
+
 # Ignore warnings
 import warnings
 
@@ -66,14 +68,15 @@ def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
             expected = cooltools.api.expected.diagsum(
                 clr,
                 view_df=regions,
-                transforms={"balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]},
+                transforms={
+                    "balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]
+                },
                 map=pool.map,
             )
         expected = pd.concat(
             [expected, bioframe.region.parse_regions(expected.region)], axis=1
         ).drop("name", axis=1)
         expected["balanced.avg"] = expected["balanced.sum"] / expected["n_valid"]
-
 
     logger.info("Generating stack of snips...")
     snipper = cooltools.api.snipping.ObsExpSnipper(clr, expected, view_df=regions)
@@ -125,26 +128,27 @@ def generate_fountain_score(stack, kernel):
         track_fs[i] = np.nanmean(fs)
     return track_fs
 
+
 def compare(mtx1, mtx2, measure):
-    if measure=="mult":
+    if measure == "mult":
         ret = np.nanmean(np.multiply(mtx1, mtx2))
-    elif measure=="corr":
+    elif measure == "corr":
         v1 = mtx1.flatten()
         v2 = mtx2.flatten()
         valid = np.isfinite(v1) & np.isfinite(v2)
-        if np.sum(valid)>3:
+        if np.sum(valid) > 3:
             ret = scipy.stats.pearsonr(v1[valid], v2[valid])[0]
         else:
             ret = np.nan
-    elif measure=="spearmanr":
+    elif measure == "spearmanr":
         v1 = mtx1.flatten()
         v2 = mtx2.flatten()
         valid = np.isfinite(v1) & np.isfinite(v2)
-        if np.sum(valid)>3:
+        if np.sum(valid) > 3:
             ret = scipy.stats.pearsonr(v1[valid], v2[valid])[0]
         else:
             ret = np.nan
-    elif measure=="mse":
+    elif measure == "mse":
         ret = np.nanmean(((mtx1.flatten() - mtx2.flatten()) ** 2))
     else:
         try:
@@ -153,7 +157,8 @@ def compare(mtx1, mtx2, measure):
             raise ValueError(f"Measure: {measure} is not defined.")
     return ret
 
-def generate_similarity_score(stack, kernel, measure='corr'):
+
+def generate_similarity_score(stack, kernel, measure="corr"):
     """
     Generate fountain score for the stack.
     :param stack: input stack (3D numpy array)
@@ -170,6 +175,7 @@ def generate_similarity_score(stack, kernel, measure='corr'):
         sim = compare(kernel, snip, measure)
         track_sim[i] = sim
     return track_sim
+
 
 def generate_scharr_score(stack, kernel=None):
     """
@@ -196,7 +202,7 @@ def generate_scharr_score(stack, kernel=None):
 def get_peaks_prominence(track):
     """Very simple wrapper to get the prominence of peaks (no filtering).
     Takes 1D numpy array as input."""
-    logger.info(f"Finding peaks in track...")
+    logger.debug(f"Finding peaks in track...")
     poss, proms = peaks.find_peak_prominence(track)
     ins_prom_track = np.zeros_like(track) * np.nan
     ins_prom_track[poss] = proms
@@ -284,7 +290,7 @@ def _flip_eigs(eigs, vect):
 
 
 def reflect(mtx):
-    return np.nanmean( [mtx, np.rot90(mtx[:, ::-1])] , axis=0)
+    return np.nanmean([mtx, np.rot90(mtx[:, ::-1])], axis=0)
 
 
 def _get_components(stack, n_eigs):
