@@ -83,6 +83,7 @@ def slice_windows(cool_path, output_path, regions, window_size, nthreads, expect
     # Create and store the stack:
     if not expected is None:
         expected = pd.read_table(expected, header=0)
+
     stack = generate_ObsExpSnips(
         clr, windows, chroms_regions, expected=expected, nthreads=nthreads
     )

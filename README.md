@@ -30,6 +30,10 @@ pip install -e ./
 
 ## Example usage
 
+Fontanka is [cooltools](https://cooltools.readthedocs.io/en/latest/)-based utility [[5](#ref5)], that requires ICE-balanced [cool files](https://cooler.readthedocs.io/en/latest/index.html) as input [[6](#ref6)].
+If you start from some other format, consider [`cooler cload`](https://cooler.readthedocs.io/en/latest/cli.html#cooler-cload) and [`hic2cool`](https://github.com/4dn-dcic/hic2cool) converters. 
+After conversion, run `cooler balance` or `cooler zoomify --balance` to get ICE-balanced cool file.
+
 1. Calculate expected with cooltools (v0.5.2):
 
 ```bash
@@ -87,3 +91,7 @@ For running fontanka as done in Galitsyna et al. 2023, see the notebook in the "
 4. <a name="ref4" href="https://doi.org/10.1038/s41467-020-19562-7">Matthey-Doret, C., Baudry, L., Breuer, A., Montagne, R., Guiglielmoni, N., Scolari, V., ... & Cournac, A. (2020). 
    Computer vision for pattern detection in chromosome contact maps. 
    Nature Communications, 11(1), 1-11.</a>
+
+5. <a name="ref4" href="https://doi.org/10.1101/2022.10.31.514564"> Open 2C, Abdennur N, Abraham S, Fudenberg G, Flyamer IM, Galitsyna AA, Goloborodko A, Imakaev M, Oksuz BA, Venev SV. Cooltools: enabling high-resolution Hi-C analysis in Python. BioRxiv. 2022:2022-10. </a>
+
+6. <a name="ref4" href="https://doi.org/10.1093/bioinformatics/btz540">  Abdennur N, Mirny LA. Cooler: scalable storage for Hi-C data and other genomically labeled arrays. Bioinformatics. 2020 Jan 1;36(1) </a>:311-6.

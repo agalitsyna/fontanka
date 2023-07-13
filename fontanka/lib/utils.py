@@ -145,7 +145,7 @@ def compare(mtx1, mtx2, measure):
         v2 = mtx2.flatten()
         valid = np.isfinite(v1) & np.isfinite(v2)
         if np.sum(valid) > 3:
-            ret = scipy.stats.pearsonr(v1[valid], v2[valid])[0]
+            ret = scipy.stats.spearmanr(v1[valid], v2[valid])[0]
         else:
             ret = np.nan
     elif measure == "mse":
