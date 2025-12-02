@@ -48,6 +48,7 @@ FILTER_SCHARR = np.array(
     ]
 )  # Gx + j*Gy
 
+
 #######################
 ### Tools for snip-based convolution:
 #######################
@@ -222,17 +223,17 @@ def inverted_trinagle_mask(alpha, height, fill_pos=1, fill_neg=0, norm_sum=True)
     :param fill_neg: values for negative regions of the mask
     :return: 2D numoy array with a mask. Resulting size will be 2*size + 1.
     """
-    mtx = np.zeros([height, height])+fill_neg
+    mtx = np.zeros([height, height]) + fill_neg
     for x in range(height):
-        bgn = np.trunc((x+1)*np.tan((np.pi/2-alpha)/2)).astype(int)
-        end = np.ceil((x+0.5)/np.tan((np.pi/2-alpha)/2)).astype(int)
-        bgn = bgn if bgn>0 else 0
-        end = end if end<height else height
+        bgn = np.trunc((x + 1) * np.tan((np.pi / 2 - alpha) / 2)).astype(int)
+        end = np.ceil((x + 0.5) / np.tan((np.pi / 2 - alpha) / 2)).astype(int)
+        bgn = bgn if bgn > 0 else 0
+        end = end if end < height else height
         mtx[x, bgn:end] = fill_pos
     if norm_sum:
-        return np.flip( mtx/np.sum(mtx) , axis=1).T
+        return np.flip(mtx / np.sum(mtx), axis=1).T
     else:
-        return np.flip( mtx , axis=1).T
+        return np.flip(mtx, axis=1).T
 
 
 def double_triangle_mask(alpha, size, fill_pos=1, fill_neg=0):
@@ -282,13 +283,13 @@ def _get_eig(snip, n_eigs):
     snip /= marg
 
     eigvecs, eigvals = numutils.get_eig(snip, n_eigs, mask_zero_rows=True)
-    eigvecs /= np.sqrt(np.nansum(eigvecs ** 2, axis=1))[:, None]
+    eigvecs /= np.sqrt(np.nansum(eigvecs**2, axis=1))[:, None]
     eigvecs *= np.sqrt(np.abs(eigvals))[:, None]
     return eigvecs
 
 
 def _flip_eigs(eigs, vect):
-    """ Flipping the sign accoring to the vector sign. """
+    """Flipping the sign accoring to the vector sign."""
     return (eigs.T * np.sign(vect)).T
 
 
@@ -307,7 +308,7 @@ def _get_components(stack, n_eigs):
             continue
         try:
             eigvecs, eigvals = numutils.get_eig(snip, n_eigs + 1, mask_zero_rows=True)
-            eigvecs /= np.sqrt(np.nansum(eigvecs ** 2, axis=1))[:, None]
+            eigvecs /= np.sqrt(np.nansum(eigvecs**2, axis=1))[:, None]
             eigvecs *= np.sqrt(np.abs(eigvals))[:, None]
 
             stack_eigvects[:, :, i] = eigvecs[1:, :]

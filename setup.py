@@ -29,9 +29,10 @@ def get_requirements(path):
         if req != "" and not (req.startswith("#") or req.startswith("-"))
     ]
 
+
 setup_requires = [
-    'cython',
-    'numpy',
+    "cython",
+    "numpy",
 ]
 install_requires = get_requirements("requirements.txt")
 

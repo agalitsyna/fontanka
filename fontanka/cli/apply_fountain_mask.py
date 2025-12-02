@@ -27,10 +27,17 @@ logger = get_logger(__name__)
     type=str,
 )
 @click.option(
-    "--window-size", "-W", help="Window size for fountains, in basepairs", type=int,
+    "--window-size",
+    "-W",
+    help="Window size for fountains, in basepairs",
+    type=int,
 )
 @click.option(
-    "--mask", "-M", help="npy object with stored mask", type=str, default=None,
+    "--mask",
+    "-M",
+    help="npy object with stored mask",
+    type=str,
+    default=None,
 )
 @click.option(
     "--measure",

@@ -26,7 +26,10 @@ logger = get_logger(__name__)
     type=str,
 )
 @click.option(
-    "--window-size", "-W", help="Window size for fountains, in basepairs", type=int,
+    "--window-size",
+    "-W",
+    help="Window size for fountains, in basepairs",
+    type=int,
 )
 @click.option(
     "--angle",
