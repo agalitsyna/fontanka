@@ -22,6 +22,8 @@ Optionally, you may want to activate IPython kernel to work with API:
 python -m ipykernel install --user --name fontanka --display-name "fontanka"
  ```
 
+Intallation from github folder:
+
 ```bash
 git clone https://github.com/agalitsyna/fontanka.git
 cd fontanka
@@ -75,7 +77,23 @@ fontanka apply-fountain-mask test.mcool::resolutions/10000 \
 
 For running fontanka as done in Galitsyna et al. 2023, see the notebook in the "examples/".
 
-### References: 
+## Running fontanka as API
+
+You can also use fontanka as a Python API. Example notebooks can be found in the "notebooks/" folder of the project https://github.com/agalitsyna/embryonic-chromatin (code for Galitsyna et al. 2023).
+
+## Running tests
+
+To run the tests, make sure all the dependencies are installed and development requirements are met:
+```bash
+pip install -r requirements-dev.txt
+```
+
+Then run the tests using pytest:
+```bash
+pytest tests/
+```
+
+## References: 
 
 1. <a name="ref1" href="https://www.genome.org/cgi/doi/10.1101/gr.269860.120">Wike, C. L., Guo, Y., Tan, M., Nakamura, R., Shaw, D. K., Díaz, N., ... & Cairns, B. R. (2021). 
    Chromatin architecture transitions from zebrafish sperm through early embryogenesis. 

@@ -3,6 +3,9 @@ import glob
 import multiprocess
 import re
 from tqdm import tqdm
+import sys
+from functools import partial # Output tqdm log to stdout instead of stderr
+tqdm = partial(tqdm, file=sys.stdout, colour="GREEN")
 
 # Packages for data analysis
 import numpy as np
@@ -13,7 +16,7 @@ from scipy import signal
 # Packages for plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
-import proplot
+import ultraplot
 
 plt.rcParams["axes.grid"] = False
 
@@ -65,23 +68,22 @@ def generate_ObsExpSnips(clr, windows, regions, expected=None, nthreads=10):
     # Calculate expected interactions for chromosome arms
     if expected is None:
         logger.info("Generating expected...")
-        with multiprocess.Pool(nthreads) as pool:
-            expected = cooltools.api.expected.diagsum(
-                clr,
-                view_df=regions,
-                transforms={
-                    "balanced": lambda p: p["count"] * p["weight1"] * p["weight2"]
-                },
-                map=pool.map,
-            )
-        expected = pd.concat(
-            [expected, bioframe.region.parse_regions(expected.region)], axis=1
-        ).drop("name", axis=1)
-        expected["balanced.avg"] = expected["balanced.sum"] / expected["n_valid"]
+        expected = cooltools.api.expected.expected_cis(
+            clr,
+            view_df=regions,
+            nproc=nthreads,
+            smooth=False, # Do not apply smoothing to expected
+            aggregate_smoothed=False,
+            clr_weight_name='weight', # Use balanced data by default
+            ignore_diags=2, # Emphasize default values
+        )
 
     logger.info("Generating stack of snips...")
     snipper = cooltools.api.snipping.ObsExpSnipper(clr, expected, view_df=regions)
     with multiprocess.Pool(nthreads) as pool:
+        # Note that old versions of cooltools output the stack with 
+        # (snip_size, snip_size, n_snips) shape.
+        # Recent versions output (n_snips, snip_size, snip_size).
         stack = cooltools.api.snipping._pileup(
             windows, snipper.select, snipper.snip, map=pool.map
         )
@@ -114,17 +116,20 @@ def read_snips(infile):
 
 def generate_fountain_score(stack, kernel):
     """
-    Generate fountain score for the stack.
+    Generate fountain score for the stack (simple multiplication).
     :param stack: input stack (3D numpy array)
     :param kernel: kernel (or mask, 2D numpy array) for convolution,
                     size should correspond to the first two dimensions of stack
     :return: track with fountain score (numpy array)
     """
-    logger.info(f"Generating fountain score...")
-    n_snips = stack.shape[2]
+    stack_shape = stack.shape
+    kernel_shape = kernel.shape
+    logger.info(f"Generating multiplication-based fountain score, shape stack: {stack_shape}, kernel shape: {kernel_shape} ...")
+
+    n_snips = stack.shape[0]
     track_fs = np.ones(n_snips) * np.nan
     for i in tqdm(range(n_snips)):
-        snip = stack[:, :, i]
+        snip = stack[i, :, :]
         fs = np.multiply(kernel, snip)
         track_fs[i] = np.nanmean(fs)
     return track_fs
@@ -168,11 +173,14 @@ def generate_similarity_score(stack, kernel, measure="corr"):
     :param measure: measure for calculating the similarity, default: corr
     :return: track with fountain score (numpy array)
     """
-    logger.info(f"Generating fountain score...")
-    n_snips = stack.shape[2]
+    stack_shape = stack.shape
+    kernel_shape = kernel.shape
+    logger.info(f"Generating fountain score, shape stack: {stack_shape}, kernel shape: {kernel_shape} ...")
+
+    n_snips = stack.shape[0]
     track_sim = np.ones(n_snips) * np.nan
     for i in tqdm(range(n_snips)):
-        snip = stack[:, :, i]
+        snip = stack[i, :, :]
         sim = compare(kernel, snip, measure)
         track_sim[i] = sim
     return track_sim
@@ -187,11 +195,14 @@ def generate_scharr_score(stack, kernel=None):
                     size should correspond to the first two dimensions of stack
     :return: track with Scharr score (numpy array)
     """
-    logger.info(f"Generating Scharr score...")
-    n_snips = stack.shape[2]
+    stack_shape = stack.shape
+    kernel_shape = kernel.shape if kernel is not None else None
+    logger.info(f"Generating Scharr score, shape stack: {stack_shape}, kernel shape: {kernel_shape}...")
+
+    n_snips = stack.shape[0]
     track_scharr = np.ones(n_snips) * np.nan
     for i in tqdm(range(n_snips)):
-        snip = stack[:, :, i].copy()
+        snip = stack[i, :, :].copy()
         if not kernel is None:
             snip = snip * kernel
         grad = signal.convolve2d(snip, FILTER_SCHARR, boundary="symm", mode="same")

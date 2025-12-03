@@ -93,5 +93,5 @@ def slice_windows(cool_path, output_path, regions, window_size, nthreads, expect
     # Store the stack:
     save_snips(stack, output_path)
 
-    logger.info(f"Finished generating stack, stack shape:{stack.shape} ")
+    logger.info(f"Finished generating stack, stack shape: {stack.shape} ")
     logger.info(f"Saved stack to {output_path}")
